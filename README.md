@@ -3,6 +3,7 @@
 Properties File Location: src/main/resources/sparkJobs.properties
 
 Spark Jobs Classes: 
+
 1 - src/main/scala/spark/lte/uapp/TopSubscribersJob.scala
 2 - src/main/scala/spark/lte/uapp/TopContentTypesJob.scala
 3 - src/main/scala/spark/lte/uapp/TonnagePerDomainJob.scala
@@ -12,6 +13,8 @@ Spark Jobs Classes:
 Constants File: src/main/scala/spark/lte/uapp/Constants.scala
 
 Utils Class: src/main/scala/spark/lte/uapp/LteUtils.scala
+
+Content Type Dictionary: http_content_type_data.csv
 
 Run Command: 
 /usr/hdp/2.6.5.0-292/spark2/bin/spark-submit --class spark.lte.uapp.ClassName --properties-file propertiesFilePath.properties JarPath.jar
