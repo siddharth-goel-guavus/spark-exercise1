@@ -5,7 +5,7 @@ package spark.lte.uapp
 
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.spark.sql.{Column, SparkSession}
-import org.apache.spark.sql.functions.{broadcast, col, dense_rank, lit, sum}
+import org.apache.spark.sql.functions.{broadcast, col, dense_rank, sum, collect_set}
 import org.apache.spark.sql.DataFrame
 import org.slf4j.LoggerFactory
 import org.apache.spark.sql.expressions.{Window, WindowSpec}
@@ -63,7 +63,7 @@ object TopContentTypesJob {
       val upLoadRankedDF = getRankedDF(aggregatedDF, "sum_"+upLoadColName)
       val totalBytesRankedDF = getRankedDF(aggregatedDF, "sum_"+totalBytesColName)
 
-      val outputDF : DataFrame = downLoadRankedDF.union(upLoadRankedDF).union(totalBytesRankedDF)
+      val outputDF : DataFrame = downLoadRankedDF.join(upLoadRankedDF, Seq("hour", "minute", subscriberColName)).join(totalBytesRankedDF, Seq("hour", "minute", subscriberColName))
 
       logger.info("Schema of outputDF" + outputDF.schema)
 
@@ -74,7 +74,7 @@ object TopContentTypesJob {
     }
     catch {
       case ex: Exception =>
-        logger.error("Error occurred while executing main method in TopSubscribersJob")
+        logger.error("Error occurred while executing main method in TopContentTypesJob")
         logger.error("StackTrace -> {}", ExceptionUtils.getRootCauseStackTrace(ex).mkString("\n"))
         throw ex
     } finally {
@@ -99,8 +99,8 @@ object TopContentTypesJob {
     val windowSpec = getWindowSpec(colName)
     val dense_rank = getDenseRank(windowSpec)
     val dfWithDenseRank = aggregatedDF.select(col("hour"), col("minute"), col(subscriberColName), col(httpContentTypeColName), col(colName), dense_rank.as("rank")).filter(col("rank") <= 5)
-    val dfWithRankTypeCol = dfWithDenseRank.withColumn("rank_type", lit(colName))
-    dfWithRankTypeCol
+    val dfWithTopSubsList = dfWithDenseRank.select(col("hour"), col("minute"),col(subscriberColName), col(httpContentTypeColName)).groupBy(col("hour"), col("minute"), col(subscriberColName)).agg(collect_set(col(httpContentTypeColName)).as("max_"+colName))
+    dfWithTopSubsList
   }
 
 }

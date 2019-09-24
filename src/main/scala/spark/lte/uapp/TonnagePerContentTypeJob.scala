@@ -65,7 +65,7 @@ object TonnagePerContentTypeJob {
     }
     catch {
       case ex: Exception =>
-        logger.error("Error occurred while executing main method in TonnagePerDomainJob")
+        logger.error("Error occurred while executing main method in TonnagePerContentTypeJob")
         logger.error("StackTrace -> {}", ExceptionUtils.getRootCauseStackTrace(ex).mkString("\n"))
         throw ex
     } finally {

@@ -4,7 +4,7 @@ package spark.lte.uapp
 
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.spark.sql.{Column, SparkSession}
-import org.apache.spark.sql.functions.{col, dense_rank, lit, sum}
+import org.apache.spark.sql.functions.{col, dense_rank, sum, collect_set}
 import org.apache.spark.sql.DataFrame
 import org.slf4j.LoggerFactory
 import org.apache.spark.sql.expressions.{Window, WindowSpec}
@@ -45,7 +45,7 @@ object TopSubscribersJob {
       val totalBytesRankedDF = getRankedDF(aggregatedDF, "sum_"+totalBytesColName)
       //df.write.in.hive
 
-      val outputDF : DataFrame = downLoadRankedDF.union(upLoadRankedDF).union(totalBytesRankedDF)
+      val outputDF : DataFrame = downLoadRankedDF.join(upLoadRankedDF, "hour").join(totalBytesRankedDF, "hour")
 
       logger.info("Schema of outputDF" + outputDF.schema)
 
@@ -81,8 +81,10 @@ object TopSubscribersJob {
     val windowSpec = getWindowSpec("hour", colName)
     val dense_rank = getDenseRank(windowSpec)
     val dfWithDenseRank = aggregatedDF.select(col("hour"), col(subscriberColName), col(colName), dense_rank.as("rank")).filter(col("rank") <= 10)
-    val dfWithRankTypeCol = dfWithDenseRank.withColumn("rank_type", lit(colName))
-    dfWithRankTypeCol
+//    val dfWithRankTypeCol = dfWithDenseRank.withColumn("rank_type", lit(colName))
+//    dfWithRankTypeCol
+    val dfWithTopSubsList = dfWithDenseRank.select(col("hour"), col(subscriberColName)).groupBy(col("hour")).agg(collect_set(col(subscriberColName)).as("max_"+colName))
+    dfWithTopSubsList
   }
 
 }
