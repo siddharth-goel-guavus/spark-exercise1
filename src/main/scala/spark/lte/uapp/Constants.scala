@@ -4,8 +4,8 @@ object Constants {
   val downLoadColName = "transaction_downlink_bytes"
   val upLoadColName = "transaction_uplink_bytes"
   val totalBytesColName = "transaction_total_bytes"
-  val tableName = "edr_tab_main"
-  val dbName = "sid_db"
+  val inputTableName = "edr_tab_main"
+  val inputDBName = "sid_db"
   val httpUrlColName = "http_url"
   val domainNameColName = "domain_name"
   val httpContentTypeColName = "http_content_type"
@@ -16,4 +16,6 @@ object Constants {
   val ggsnXMLPath = "/data/siddharth/ggsn.xml"
   val ggsnIPColName = "ggsn_ip"
   val ggsnNameColName = "ggsn_name"
+  val outputFormat = "orc"
+  val outputDBName = "sid_output_db"
 }

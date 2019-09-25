@@ -3,7 +3,7 @@ package spark.lte.uapp
 import java.util.Objects
 
 import org.apache.spark.sql.expressions.UserDefinedFunction
-import org.apache.spark.sql.functions.{col, to_timestamp, udf}
+import org.apache.spark.sql.functions.{col, sum, to_timestamp, udf}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.slf4j.LoggerFactory
 
@@ -15,11 +15,23 @@ object LteUtils {
 
   def getSparkSession(): SparkSession = SparkSession.builder.enableHiveSupport().getOrCreate()
 
-  def readORCData(sparkSession: SparkSession, dbName: String, tableName: String, selectCols: Seq[String]): DataFrame =
+  def writeOutputDF(inputDF: DataFrame, partitionCols: Seq[String], outputFormat: String, outputDB: String, outputTableName: String) =
+  {
+    inputDF.write.mode("append").partitionBy(partitionCols: _*).format(outputFormat).saveAsTable(outputDB + "." + outputTableName)
+  }
+
+  def readHiveTable(sparkSession: SparkSession, dbName: String, tableName: String, selectCols: Seq[String]): DataFrame =
   {
     val df = sparkSession.sql("select * from " + dbName + "." + tableName)
     val dfWithSelectCols = df.select(selectCols.map(c => col(c)): _*)
     dfWithSelectCols
+  }
+
+  def getAggregatedDF(inputDF: DataFrame ,groupByCols: Seq[String], aggregateCols: Seq[String]): DataFrame =
+  {
+    val aggColSeq = aggregateCols.map(c => sum(col(c)).as("sum_" + c))
+    val aggregatedDF = inputDF.groupBy(groupByCols.map(c => col(c)): _*).agg(aggColSeq.head, aggColSeq.tail: _*)
+    aggregatedDF
   }
 
   def convertStringColsToTimestamp(sparkSession: SparkSession, inputDF: DataFrame, timeStampCols: List[String]): DataFrame =
@@ -59,7 +71,6 @@ object LteUtils {
   }
 
   //Tonnage Jobs Utils
-
   val checkInt: (String) => Boolean = (x: String) => { val y = Try(x.toInt); y match { case Success(x) => true; case _ => false; }}
 
   val checkIntUdf: UserDefinedFunction= udf(checkInt)

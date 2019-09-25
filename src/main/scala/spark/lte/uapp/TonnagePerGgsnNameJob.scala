@@ -16,15 +16,20 @@ object TonnagePerGgsnNameJob {
   private val totalBytesColName = Constants.totalBytesColName
   private val ggsnIPColName = Constants.ggsnIPColName
   private val ggsnNameColName = Constants.ggsnNameColName
-  private val tableName = Constants.tableName
-  private val dbName = Constants.dbName
+  private val inputTableName = Constants.inputTableName
+  private val inputDBName = Constants.inputDBName
   private val selectCols = Seq("hour", "minute", upLoadColName, downLoadColName, ggsnIPColName)
+  private val outputDBName = Constants.outputDBName
+  private val outputFormat = Constants.outputFormat
+  private val groupByCols = Seq("hour", "minute", ggsnNameColName)
+  private val outputTableName = "edr_tonnage_per_ggsn_table"
+  private val outputPartitionCols = Seq("hour", "minute")
 
   def main(args: Array[String]): Unit = {
     var spark: SparkSession = null
     try {
       spark = LteUtils.getSparkSession()
-      val inputDF = LteUtils.readORCData(spark, dbName, tableName, selectCols)
+      val inputDF = LteUtils.readHiveTable(spark, inputDBName, inputTableName, selectCols)
       logger.info("Schema of inputDF" + inputDF.schema)
 
       val ggsnDF = readGgsnXml(spark, ggsnXMLPath, ggsnNameColName, ggsnIPColName)
@@ -35,13 +40,10 @@ object TonnagePerGgsnNameJob {
       val dfWithTotalBytesColumn = LteUtils.sumColumns(joinedDF, downLoadColName, upLoadColName, totalBytesColName)
 
       val aggregatedDF = dfWithTotalBytesColumn.
-        groupBy(col("hour"), col("minute"),col(ggsnNameColName)).
+        groupBy(groupByCols.map(c => col(c)): _*).
         agg(sum(col(totalBytesColName)).as("tonnage"))
 
-      aggregatedDF.write.
-        partitionBy("hour","minute").
-        format("orc").
-        saveAsTable("sid_output_db.edr_tonnage_per_ggsn_table")
+      LteUtils.writeOutputDF(aggregatedDF, outputPartitionCols, outputFormat, outputDBName, outputTableName)
     }
     catch {
       case ex: Exception =>
@@ -54,13 +56,12 @@ object TonnagePerGgsnNameJob {
   }
 
   def readGgsnXml(sparkSession: SparkSession, XMLpath: String, ggsnNameColName: String, ggsnIPColName: String): DataFrame = {
-    val df = sparkSession.read.option("rowTag","ggsn").option("attributePrefix", "c").option("valueTag", "valTag").xml(XMLpath)
-    val explodedf = df.select(col("cname").as(ggsnNameColName), explode(col("rule")).as("rule_col"))
-    val ggsnDF = explodedf.select(col(ggsnNameColName), col("rule_col.condition.cvalue").as(ggsnIPColName))
+    val df = sparkSession.read.option("rowTag", "ggsn").option("attributePrefix", "prefix_").option("valueTag", "val").xml(XMLpath)
+    val explodedf = df.select(col("prefix_name").as(ggsnNameColName), explode(col("rule")).as("rule_col"))
+    val ggsnDF = explodedf.select(col(ggsnNameColName), col("rule_col.condition.prefix_value").as(ggsnIPColName))
 
     ggsnDF
   }
-
 
 }
 
