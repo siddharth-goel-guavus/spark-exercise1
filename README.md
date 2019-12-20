@@ -4,11 +4,11 @@ Properties File Location: src/main/resources/sparkJobs.properties
 
 ## Spark Jobs Classes: 
 
-<li> 1 - src/main/scala/spark/lte/uapp/TopSubscribersJob.scala </li>
-<li> 2 - src/main/scala/spark/lte/uapp/TopContentTypesJob.scala </li>
-<li> 3 - src/main/scala/spark/lte/uapp/TonnagePerDomainJob.scala </li>
-<li> 4 - src/main/scala/spark/lte/uapp/TonnagePerContentTypeJob.scala </li>
-<li> 5 - src/main/scala/spark/lte/uapp/TonnagePerGgsnNameJob.scala </li>
+<li> src/main/scala/spark/lte/uapp/TopSubscribersJob.scala </li>
+<li> src/main/scala/spark/lte/uapp/TopContentTypesJob.scala </li>
+<li> src/main/scala/spark/lte/uapp/TonnagePerDomainJob.scala </li>
+<li> src/main/scala/spark/lte/uapp/TonnagePerContentTypeJob.scala </li>
+<li> src/main/scala/spark/lte/uapp/TonnagePerGgsnNameJob.scala </li>
 
 Constants File: src/main/scala/spark/lte/uapp/Constants.scala
 
